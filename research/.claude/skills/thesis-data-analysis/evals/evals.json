@@ -1,0 +1,526 @@
+{
+  "skill_name": "thesis-data-analysis",
+  "version": "2.0",
+  "last_updated": "2026-03",
+  "description": "评测 thesis-data-analysis skill 的核心统计决策流程、方法选择正确性、输出完整性与风险控制能力",
+  "scoring_weights": {
+    "process_correctness": 40,
+    "method_correctness": 30,
+    "output_completeness": 20,
+    "risk_control": 10
+  },
+  "cases": [
+    {
+      "id": "P0-A-independent-groups-continuous",
+      "priority": "P0",
+      "category": "差异比较-两独立组-连续变量",
+      "prompt": "我有实验组和对照组各30人，测量了干预后的步行速度（m/s），想知道两组之间是否存在差异。数据在 /tmp/gait_data.csv，列名为 group（1=对照，2=实验）和 speed。请帮我分析。",
+      "context": {
+        "study_design": "两组平行对照",
+        "n_groups": 2,
+        "sample_type": "independent",
+        "outcome_type": "continuous",
+        "distribution": "unknown"
+      },
+      "expected_checks": {
+        "must_pass": [
+          "asks_clarifying_questions",
+          "outputs_statistical_path",
+          "validates_assumptions_normality",
+          "validates_assumptions_levene",
+          "selects_method_based_on_assumptions",
+          "provides_effect_size_with_ci",
+          "provides_paper_style_summary",
+          "no_fabrication"
+        ],
+        "should_pass": [
+          "provides_python_code",
+          "provides_spss_syntax",
+          "provides_three_line_table",
+          "distinguishes_statistical_clinical_significance"
+        ],
+        "bonus": [
+          "mentions_limitations",
+          "offers_power_analysis",
+          "apa7_p_value_format"
+        ]
+      },
+      "instant_fail_if": [
+        "runs_t_test_without_normality_check",
+        "ignores_levene_result_when_choosing_t_variant",
+        "no_effect_size_reported",
+        "fabricates_results"
+      ],
+      "notes": "核心路径：澄清样本独立性 → Shapiro-Wilk → Levene → 选 t/Welch/Mann-Whitney → Cohen's d 或 r → 论文段落。重点检查 Levene 后是否正确选择等方差或 Welch 版本。"
+    },
+    {
+      "id": "P0-B-wrong-method-correction",
+      "priority": "P0",
+      "category": "错误方法纠偏",
+      "prompt": "我有两组数据，数据分布明显偏态（Q-Q图显示严重偏离正态线），帮我做独立样本t检验分析两组差异。",
+      "context": {
+        "study_design": "两组独立样本",
+        "distribution": "skewed",
+        "user_specified_method": "independent t-test",
+        "method_appropriate": false
+      },
+      "expected_checks": {
+        "must_pass": [
+          "rejects_direct_execution",
+          "explains_why_t_test_inappropriate",
+          "provides_alternative_method",
+          "alternative_is_mann_whitney_u",
+          "no_fabrication"
+        ],
+        "should_pass": [
+          "offers_to_run_both_with_warning",
+          "explains_effect_size_for_nonparametric"
+        ],
+        "bonus": [
+          "mentions_log_transformation_option",
+          "explains_central_limit_theorem_exception"
+        ]
+      },
+      "instant_fail_if": [
+        "directly_runs_t_test_without_questioning",
+        "no_mention_of_normality_violation",
+        "no_alternative_method_provided"
+      ],
+      "notes": "关键测试：模型是否会在用户明确说数据偏态的情况下仍然直接执行t检验。正确行为是先解释前提不满足，再提供Mann-Whitney U方案，若用户坚持才执行并加风险警告。"
+    },
+    {
+      "id": "P0-C-insufficient-information",
+      "priority": "P0",
+      "category": "信息不足-停止推断",
+      "prompt": "我有一份医学数据想做统计分析，能帮我分析一下吗？",
+      "context": {
+        "information_provided": "极少",
+        "missing_info": [
+          "研究问题",
+          "变量名称",
+          "研究设计",
+          "样本量",
+          "分组信息"
+        ]
+      },
+      "expected_checks": {
+        "must_pass": [
+          "stops_before_analysis",
+          "asks_clarifying_questions",
+          "questions_cover_research_question",
+          "questions_cover_variable_types",
+          "questions_cover_sample_structure",
+          "no_fabrication"
+        ],
+        "should_pass": [
+          "explains_why_clarification_needed",
+          "provides_structured_question_list"
+        ],
+        "bonus": [
+          "offers_preliminary_framework_while_waiting"
+        ]
+      },
+      "instant_fail_if": [
+        "starts_analysis_without_any_clarification",
+        "makes_assumptions_about_study_design_without_asking",
+        "fabricates_variables_or_groups"
+      ],
+      "notes": "检验模型在信息极度不足时是否会停下来提问，而不是生成看起来合理但基础错误的分析框架。至少应问：研究问题、变量类型、样本关系这三点。"
+    },
+    {
+      "id": "P1-D-paired-comparison",
+      "priority": "P1",
+      "category": "差异比较-配对设计-前后比较",
+      "prompt": "我有20名脑卒中患者，在康复治疗前和治疗8周后分别测量了Berg平衡量表评分（0-56分）。想知道治疗是否有效果。数据在 /tmp/berg_data.csv，列名 patient_id、pre_score、post_score。",
+      "context": {
+        "study_design": "单组前后配对",
+        "n_groups": 1,
+        "sample_type": "paired",
+        "outcome_type": "continuous",
+        "scale": "Berg Balance Scale 0-56"
+      },
+      "expected_checks": {
+        "must_pass": [
+          "identifies_paired_design",
+          "validates_normality_of_differences",
+          "selects_paired_t_or_wilcoxon",
+          "uses_dz_not_ds_for_effect_size",
+          "outputs_statistical_path",
+          "provides_paper_style_summary",
+          "no_fabrication"
+        ],
+        "should_pass": [
+          "discusses_berg_as_continuous_with_caveat",
+          "provides_paired_plot_suggestion",
+          "provides_python_code",
+          "provides_spss_syntax",
+          "reports_pre_post_descriptives"
+        ],
+        "bonus": [
+          "mentions_mcid_clinical_significance",
+          "suggests_bland_altman_if_reliability_context"
+        ]
+      },
+      "instant_fail_if": [
+        "treats_as_independent_samples",
+        "uses_ds_instead_of_dz",
+        "skips_normality_check_on_differences"
+      ],
+      "notes": "关键检查：(1) 是否识别配对设计；(2) 效应量是否用 d_z（差值SD标准化）而非 d_s（池化SD）；(3) 正态性检验是否针对差值而非两组分别检验。"
+    },
+    {
+      "id": "P1-E-mixed-design",
+      "priority": "P1",
+      "category": "差异比较-混合设计-组别×时间",
+      "prompt": "我有实验组25人和对照组25人，分别在基线(T0)、4周(T1)、8周(T2)测量了步行速度。我想分析干预效果。数据在 /tmp/mixed_data.csv，列名：id, group, T0_speed, T1_speed, T2_speed。",
+      "context": {
+        "study_design": "RCT 混合设计",
+        "n_groups": 2,
+        "time_points": 3,
+        "sample_type": "mixed",
+        "outcome_type": "continuous"
+      },
+      "expected_checks": {
+        "must_pass": [
+          "identifies_mixed_design",
+          "prioritizes_interaction_effect",
+          "outputs_interaction_effect_first",
+          "handles_sphericity_assumption",
+          "outputs_statistical_path",
+          "provides_paper_style_summary",
+          "no_fabrication"
+        ],
+        "should_pass": [
+          "conducts_simple_effects_if_interaction_significant",
+          "provides_interaction_plot_suggestion",
+          "reports_partial_eta_squared",
+          "handles_missing_data_discussion",
+          "provides_python_code"
+        ],
+        "bonus": [
+          "mentions_lmm_as_alternative_for_missing_data",
+          "reports_bonferroni_corrected_pairwise"
+        ]
+      },
+      "instant_fail_if": [
+        "reports_main_effects_before_interaction",
+        "ignores_interaction_effect",
+        "no_sphericity_check",
+        "treats_as_three_separate_independent_t_tests"
+      ],
+      "notes": "关键检查：(1) 交互效应必须最先报告，是干预有效性的核心；(2) 若交互显著需做简单效应分析；(3) 球形假设检验不可缺。这是康复RCT最常见的分析场景。"
+    },
+    {
+      "id": "P1-F-categorical-comparison",
+      "priority": "P1",
+      "category": "分类变量-卡方或Fisher",
+      "prompt": "我想比较实验组（n=30）和对照组（n=30）不良事件的发生率，实验组4人发生，对照组2人发生。用什么方法分析？能给我代码和结果写法吗？",
+      "context": {
+        "study_design": "两组对照",
+        "outcome_type": "binary",
+        "event_counts": {
+          "intervention": {
+            "events": 4,
+            "n": 30
+          },
+          "control": {
+            "events": 2,
+            "n": 30
+          }
+        },
+        "expected_small_cells": true
+      },
+      "expected_checks": {
+        "must_pass": [
+          "checks_expected_frequencies",
+          "identifies_small_expected_frequencies",
+          "selects_fisher_exact_test",
+          "provides_or_with_ci",
+          "no_fabrication"
+        ],
+        "should_pass": [
+          "explains_why_chi_square_not_recommended",
+          "provides_python_code",
+          "provides_spss_syntax",
+          "reports_incidence_rates_with_ci"
+        ],
+        "bonus": [
+          "reports_rr_and_nnt",
+          "discusses_power_limitation_with_small_n"
+        ]
+      },
+      "instant_fail_if": [
+        "applies_chi_square_without_checking_expected_frequencies",
+        "no_or_reported",
+        "no_confidence_interval_for_or"
+      ],
+      "notes": "关键：期望频数 = 30×(6/60) = 3 < 5，必须用Fisher精确检验，不能直接用卡方。还需报告OR+95% CI。"
+    },
+    {
+      "id": "P1-G-spss-screenshot-only",
+      "priority": "P1",
+      "category": "仅SPSS输出-无原始数据",
+      "prompt": "这是我SPSS做的独立样本t检验的输出结果：t=2.34, df=58, Sig.=0.023。你能帮我解释一下，并用Python验证吗？",
+      "context": {
+        "data_available": false,
+        "only_spss_output": true,
+        "can_python_recompute": false
+      },
+      "expected_checks": {
+        "must_pass": [
+          "explicitly_states_cannot_python_recompute",
+          "interprets_spss_output_correctly",
+          "identifies_need_for_original_data",
+          "provides_data_requirements_list",
+          "no_fabrication"
+        ],
+        "should_pass": [
+          "formats_result_in_apa_style",
+          "reminds_to_report_effect_size",
+          "asks_about_levene_result",
+          "clarifies_spss_sig_format"
+        ],
+        "bonus": [
+          "explains_what_would_be_verified_if_data_provided"
+        ]
+      },
+      "instant_fail_if": [
+        "claims_to_have_run_python_verification",
+        "fabricates_python_output",
+        "does_not_mention_missing_effect_size"
+      ],
+      "notes": "核心测试：没有原始数据时，模型是否诚实说明无法完成Python重算。同时检查是否识别SPSS输出缺少效应量，以及Sig.=.023的正确报告格式。"
+    },
+    {
+      "id": "P2-H-three-groups-anova",
+      "priority": "P2",
+      "category": "差异比较-三组独立样本",
+      "prompt": "我有三组患者（对照组n=20，低强度组n=20，高强度组n=20），测量了8周后的FIM运动功能评分。数据在 /tmp/fim_data.csv，列名 group（1/2/3）和 fim_score。请帮我比较三组差异。",
+      "context": {
+        "study_design": "三组独立样本",
+        "n_groups": 3,
+        "sample_type": "independent",
+        "outcome_type": "continuous"
+      },
+      "expected_checks": {
+        "must_pass": [
+          "validates_normality_per_group",
+          "validates_levene_for_all_groups",
+          "selects_anova_or_welch_or_kruskal",
+          "conducts_posthoc_if_significant",
+          "selects_correct_posthoc_based_on_levene",
+          "no_fabrication"
+        ],
+        "should_pass": [
+          "reports_eta_squared_and_omega_squared",
+          "reports_pairwise_cohens_d",
+          "provides_boxplot_suggestion",
+          "provides_three_line_table"
+        ],
+        "bonus": [
+          "explains_difference_tukey_vs_games_howell",
+          "mentions_bonferroni_alternative"
+        ]
+      },
+      "instant_fail_if": [
+        "does_anova_without_normality_check",
+        "skips_posthoc_after_significant_anova",
+        "uses_tukey_when_variance_unequal"
+      ],
+      "notes": "关键检查：(1) Levene不显著→Tukey HSD；(2) Levene显著→Welch ANOVA + Games-Howell；(3) 正态不满足→Kruskal-Wallis + Dunn(Bonferroni)。ANOVA显著后必须做事后检验。"
+    },
+    {
+      "id": "P2-I-repeated-measures",
+      "priority": "P2",
+      "category": "重复测量-多时间点单组",
+      "prompt": "我有30名患者在T0、T1（4周）、T2（8周）三个时间点测量了Berg平衡量表评分。想分析时间效应。数据在 /tmp/berg_repeated.csv，列名 id、T0、T1、T2。",
+      "context": {
+        "study_design": "单组重复测量",
+        "n_groups": 1,
+        "time_points": 3,
+        "sample_type": "repeated_measures",
+        "outcome_type": "continuous"
+      },
+      "expected_checks": {
+        "must_pass": [
+          "identifies_repeated_measures_design",
+          "checks_mauchly_sphericity",
+          "applies_gg_or_hf_correction_if_violated",
+          "reports_epsilon_value",
+          "conducts_pairwise_posthoc_with_bonferroni",
+          "no_fabrication"
+        ],
+        "should_pass": [
+          "reports_partial_eta_squared",
+          "reports_pairwise_dz",
+          "provides_line_plot_suggestion",
+          "provides_rm_anova_code"
+        ],
+        "bonus": [
+          "mentions_friedman_as_nonparametric_alternative",
+          "discusses_missing_data_implications"
+        ]
+      },
+      "instant_fail_if": [
+        "treats_as_three_independent_groups",
+        "ignores_sphericity_check",
+        "no_correction_when_mauchly_significant",
+        "no_posthoc_comparison"
+      ],
+      "notes": "关键：(1) Mauchly p<.05时，ε<.75用GG，ε≥.75用HF；(2) 必须报告ε值；(3) 事后Bonferroni校正的配对比较必须报告 d_z。"
+    },
+    {
+      "id": "P2-J-correlation-analysis",
+      "priority": "P2",
+      "category": "相关分析",
+      "prompt": "我想分析肌肉力量（膝关节伸展力矩，Nm）和步行速度（m/s）之间是否存在相关性。样本量40人。数据在 /tmp/strength_gait.csv，列名 strength 和 speed。",
+      "context": {
+        "study_design": "横断面相关研究",
+        "n": 40,
+        "outcome_type": "correlation"
+      },
+      "expected_checks": {
+        "must_pass": [
+          "checks_normality_of_both_variables",
+          "selects_pearson_or_spearman_based_on_normality",
+          "reports_r_with_95ci",
+          "explicitly_states_correlation_not_causation",
+          "no_fabrication"
+        ],
+        "should_pass": [
+          "provides_scatter_plot_code",
+          "reports_r_squared_for_pearson",
+          "interprets_effect_size_per_cohen",
+          "provides_python_code"
+        ],
+        "bonus": [
+          "suggests_partial_correlation_for_confounder_control",
+          "mentions_bootstrap_ci_for_spearman"
+        ]
+      },
+      "instant_fail_if": [
+        "implies_causal_relationship",
+        "no_confidence_interval_for_r",
+        "skips_normality_check_before_pearson"
+      ],
+      "notes": "三个核心点：(1) 先检验正态性再选Pearson/Spearman；(2) 必须报告95% CI；(3) 必须明确说明相关不代表因果。"
+    },
+    {
+      "id": "P2-K-icc-reliability",
+      "priority": "P2",
+      "category": "信度分析-ICC",
+      "prompt": "我有两名物理治疗师对同一批20名患者进行了步态评估，想知道两位治疗师之间的评估一致性如何。数据在 /tmp/rater_data.csv，列名 patient_id、rater1_score、rater2_score。",
+      "context": {
+        "study_design": "信度研究",
+        "n": 20,
+        "n_raters": 2,
+        "reliability_type": "inter-rater"
+      },
+      "expected_checks": {
+        "must_pass": [
+          "identifies_icc_as_appropriate_method",
+          "specifies_two_way_mixed_absolute_agreement",
+          "reports_icc_with_95ci",
+          "interprets_using_koo_mae_2016",
+          "no_fabrication"
+        ],
+        "should_pass": [
+          "provides_python_code_with_pingouin",
+          "provides_spss_reliability_syntax",
+          "distinguishes_single_vs_average_measures_icc",
+          "mentions_sem_as_complement"
+        ],
+        "bonus": [
+          "suggests_bland_altman_plot",
+          "discusses_sample_size_for_reliability_studies"
+        ]
+      },
+      "instant_fail_if": [
+        "uses_pearson_correlation_for_reliability",
+        "uses_wrong_icc_model_type",
+        "no_confidence_interval",
+        "no_interpretation_standard_cited"
+      ],
+      "notes": "核心：(1) 不能用Pearson相关代替ICC；(2) 必须指定ICC模型类型（双因素混合，绝对一致性）；(3) 必须用Koo&Mae(2016)标准解释ICC值。"
+    },
+    {
+      "id": "P2-L-multiple-regression",
+      "priority": "P2",
+      "category": "多元线性回归",
+      "prompt": "我想分析哪些因素影响步行速度，有年龄、BMI、Berg评分、干预分组四个预测变量。样本量60人。数据在 /tmp/regression_data.csv。",
+      "context": {
+        "study_design": "多元线性回归",
+        "n": 60,
+        "outcome_type": "continuous",
+        "n_predictors": 4
+      },
+      "expected_checks": {
+        "must_pass": [
+          "specifies_linear_regression_as_method",
+          "conducts_regression_diagnostics",
+          "checks_vif_for_multicollinearity",
+          "reports_b_se_beta_t_p_ci",
+          "reports_r_squared_and_f_test",
+          "no_fabrication"
+        ],
+        "should_pass": [
+          "checks_cooks_d_for_influential_cases",
+          "checks_residual_normality",
+          "provides_python_statsmodels_code",
+          "provides_spss_regression_syntax",
+          "explains_standardized_vs_unstandardized"
+        ],
+        "bonus": [
+          "mentions_hierarchical_regression_option",
+          "discusses_overfitting_risk_with_n60_p4"
+        ]
+      },
+      "instant_fail_if": [
+        "no_regression_diagnostics",
+        "reports_only_b_without_ci",
+        "confuses_b_with_beta",
+        "no_model_fit_statistics"
+      ],
+      "notes": "关键诊断：VIF>10为严重共线性；Cook's D>4/n为有影响观测值；残差Q-Q图须检验。n/p = 60/4 = 15，满足最低要求。"
+    },
+    {
+      "id": "P2-M-three-line-table-generation",
+      "priority": "P2",
+      "category": "三线表生成",
+      "prompt": "请帮我把以下结果整理成论文三线表：实验组30人，对照组30人；步行速度：实验组0.97±0.21 m/s，对照组0.82±0.18 m/s，t(58)=3.01，p=.004，Cohen's d=0.78 [95% CI: 0.25, 1.31]；不良事件：实验组2例(6.7%)，对照组5例(16.7%)，Fisher p=.420，OR=0.36 [95% CI: 0.06, 2.01]。",
+      "context": {
+        "content_type": "table_generation",
+        "has_continuous_var": true,
+        "has_categorical_var": true,
+        "effect_sizes_provided": true
+      },
+      "expected_checks": {
+        "must_pass": [
+          "no_vertical_lines",
+          "three_horizontal_lines_only",
+          "includes_effect_size_column",
+          "includes_ci_column",
+          "complete_table_notes",
+          "no_fabrication"
+        ],
+        "should_pass": [
+          "correct_decimal_places_consistency",
+          "p_value_format_correct_no_leading_zero",
+          "provides_latex_booktabs_version",
+          "notes_explain_all_abbreviations"
+        ],
+        "bonus": [
+          "provides_python_table_generation_code",
+          "offers_word_export_suggestion"
+        ]
+      },
+      "instant_fail_if": [
+        "includes_vertical_lines",
+        "omits_effect_size_from_table",
+        "table_notes_missing_or_incomplete",
+        "p_value_written_as_0_000"
+      ],
+      "notes": "核心检查：(1) 无竖线；(2) 效应量列不可省略；(3) p值格式（< .001 或 .XXX，无前导零）；(4) 表注必须完整说明呈现方式、统计方法、效应量定义和显著性符号。"
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+OK [0]: CD '/Users/leyixu/Ai cowork/research'.
+OK [1]: PRESERVE.
+OK [2]: SET UNICODE ON.
+FAIL [3]: GET DATA /TYPE=TXT
+   Error: [errLevel 3] Serious error.

@@ -1,0 +1,112 @@
+# ============================================
+# 终极硬性约束逻辑锁（Checklist v2 - Final）
+# 定稿日期：2026-04-11
+# 文献支撑：PMID 38162337, 36554493, 34285276
+# ============================================
+
+模块一：T0 基线特异性生理约束（发病 1 个月）
+--------------------------------------------------
+[R1.1] 痉挛轻中度钳制
+    LOGIC: IF (Time == T0) THEN MAS IN {1, 1+} AND CSS IN {8, 11}
+    REASON: 发病1个月处于 Brunnstrom II→III 转化初期，UMNS 自然时间轴上痉挛刚开始显现。CSS 分级：0–9轻度，10–12中度，13–16重度。若 T0 队列平均 CSS 超过11或 MAS 达2级，违背亚急性早期真实分布。
+    🚨 REJECT: IF (Time == T0) AND (MAS > 1+ OR CSS > 11) THEN REJECT
+    LIT_REF: PMID 38162337 (Kim, 2023, n=123): 入院下肢 MAS=0 者占88.6%，MAS=1 仅10.6%，MAS=2 仅0.8%。
+
+[R1.2] 卒中亚型基线劣势
+    LOGIC: Hemorrhagic_FMA-LE_T0 < Ischemic_FMA-LE_T0
+    🚨 REJECT: IF (Hemorrhagic_FMA-LE_T0 >= Ischemic_FMA-LE_T0) THEN REJECT
+    NOTE: 基于临床共识保留，直接量化证据仍弱。
+
+模块二：纵向演进与“追赶效应”（Catch-up Effect）
+--------------------------------------------------
+[R2.1] 斜率与数据交叉
+    LOGIC: Slope_Hemorrhagic(T2->T3) > Slope_Ischemic(T2->T3)
+    NOTE: ⚠️ 待验证假设。当前 PubMed 检索未找到出血性 vs 缺血性纵向反超的直接文献。
+
+[R2.2] 末期反超印证（T3）
+    LOGIC: Hemorrhagic_FMA-LE_T3 > Ischemic_FMA-LE_T3 AND Hemorrhagic_MBI_T3 > Ischemic_MBI_T3
+    NOTE: ⚠️ 待验证假设。
+
+[R2.3] 步态反超印证
+    LOGIC: Hemorrhagic_TUGT_T3 < Ischemic_TUGT_T3
+    🚨 REJECT: IF (Hemorrhagic_TUGT_T3 >= Ischemic_TUGT_T3) THEN REJECT
+    NOTE: ⚠️ 待验证假设。
+
+模块三：生物力学与步态解锁（BBS ↔ TUGT 强制锁）
+--------------------------------------------------
+[R3.1] 绝对瘫痪红线
+    LOGIC: IF (BBS < 21) THEN TUGT == N/A
+    REASON: BBS < 21 表明患者连基础的无支撑坐位或辅助站立都极难维持，绝对无法完成3米起立行走。
+    🚨 REJECT: IF (BBS < 21 AND TUGT != N/A) THEN REJECT
+
+[R3.2] 强制平衡解锁锁（步态底盘卡点）
+    LOGIC-A: IF (TUGT != N/A AND BBS < 21) THEN REJECT
+    LOGIC-B: IF (BBS BETWEEN 21 AND 36) THEN TUGT MUST BE > 35s
+    REASON: BBS 21–36 分属于跌倒高危区间，患者可在辅助/监护下勉强完成 TUGT，但耗时极长（>40s）。Khan et al. (2022) 证实 BBS 是 TUG→Mobility 路径的显著中介（indirect effect β=-0.056, p=0.001），但原设定 37 分作为解锁点过高。
+    🚨 REJECT: IF (TUGT != N/A AND BBS < 21) THEN REJECT
+    🚨 REJECT: IF (BBS BETWEEN 21 AND 36 AND TUGT <= 35s) THEN REJECT
+    LIT_REF: PMID 36554493 (Khan, 2022, n=41): BBS β=0.534 是 Mobility 最强预测因子；BBS 显著中介 TUG→RMI。
+
+[R3.3] 高质量步态三角
+    LOGIC-A: IF (TUGT < 25s) AND (FMA-LE < 21 OR BBS < 38 OR MAS > 2) THEN REJECT
+    LOGIC-B: 在 FMA-LE 突破 18 分，其 TUGT 才有资格降至 45 秒以内。
+    LOGIC-C: IF (FMA-LE <= 12 AND TUGT < 40s) THEN REJECT
+    REASON: 快 TUG / 高步态功能与高 BBS / 高 ADL 存在强耦合（文献 r=0.81~0.925），但精确数值 21/38/25/45 为临床经验阈值。
+    🚨 REJECT: IF (TUGT < 25s AND (FMA-LE < 21 OR BBS < 38 OR MAS > 2)) THEN REJECT
+    🚨 REJECT: IF (FMA-LE <= 12 AND TUGT < 40s) THEN REJECT
+    LIT_REF: PMID 38162337 (FAC-ADL r=0.925); PMID 36554493 (TUG-RMI r=-0.81).
+
+模块四：宏观功能阶跃与天花板（FMA-LE ↔ ADL 强制锁）
+--------------------------------------------------
+[R4.1] 解锁前绝对滞后效应
+    LOGIC: IF (FMA-LE < 15 AND MBI > 65) THEN REJECT
+    NOTE: PMID 38162337 入院 K-MBI=56.24±29.44，重度患者 MBI≈56 与 ≤65 间接吻合，但直接 FMA-LE<15 分层证据仍缺。
+    🚨 REJECT: IF (FMA-LE < 15 AND MBI > 65) THEN REJECT
+    LIT_REF: PMID 38162337 (Kim, 2023).
+
+[R4.2] 强制阶跃锁（Jump Effect）
+    LOGIC: IF (FMA-LE_Previous < 22 AND FMA-LE_Current >= 22) AND (单周期 ΔMBI < 6) THEN REJECT
+    NOTE: ⚠️ 弱文献支撑。22 分作为 ADL 阶跃阈值的直接证据仍未找到。建议在实际应用中允许人工复核（DO NOT HARD-AUTO-REJECT without review）。
+    🚨 REJECT: IF (FMA-LE_Previous < 22 AND FMA-LE_Current >= 22 AND 单周期 ΔMBI < 6) THEN REJECT
+
+[R4.3] 天花板效应（Ceiling Effect）
+    LOGIC: IF (FMA-LE >= 28 AND MBI >= 80) AND (后续单周期 ΔMBI > 5) THEN REJECT
+    NOTE: 高 MBI 天花板存在合理，但单周期 ΔMBI≤5 缺乏纵向文献直接验证。
+    🚨 REJECT: IF (FMA-LE >= 28 AND MBI >= 80 AND 后续单周期 ΔMBI > 5) THEN REJECT
+    LIT_REF: PMID 34285276 (Hsu, 2021): 慢性期 BI=85.3±14.9.
+
+模块五：可塑性极限钳制（Delta Max 封顶锁）
+--------------------------------------------------
+[R5.1] 神经重塑单周期（2周）物理极限
+    LOGIC: IF (单周期 ΔFMA-LE > 8) OR (单周期 ΔBBS > 9) OR (单周期 TUGT缩短幅度 > 15s) THEN REJECT
+    REASON: FMA-LE MCID≈6分，BBS MCID≈4–5分。即便在多模态神经调控联合机器人训练下，2周内增长超过 1.5×MCID（即8分和9分）也逾越了中枢神经轴突发芽与突触重塑的生理周期。
+    🚨 REJECT: IF (单周期 ΔFMA-LE > 8 OR 单周期 ΔBBS > 9 OR 单周期 TUGT缩短幅度 > 15s) THEN REJECT
+    NOTE: MCID 数值有文献共识支撑，但"2周上限=1.5×MCID"为基于MCID的推导假设，尚无纵向研究直接验证该精确封顶值。
+
+# ============================================
+# 附录：文献数据支撑摘要
+# ============================================
+# PMID 38162337 (Kim et al., 2023, n=123):
+#   - 入院下肢 MAS 分布: 0级 88.6%, 1级 10.6%, 2级 0.8% → 支撑 R1.1(v2) 下调阈值
+#   - BBS(admission)=30.86±19.22; K-MBI(admission)=56.24±29.44; ΔK-MBI=6.10±7.12
+#   - K-MBI ↔ BBS r=0.925; K-MBI ↔ FAC r=0.921
+#   - ΔK-MBI 回归: Upper extremity β=0.494, Cognitive β=0.197, Balance β=0.163
+#
+# PMID 36554493 (Khan et al., 2022, n=41):
+#   - RMI ↔ BBS r=0.81; RMI ↔ TUG r=-0.81
+#   - 回归: BBS β=0.534 (p=0.001), TUG β=-0.316 (p=0.022)
+#   - Mediation: BBS 显著中介 TUG→RMI, indirect effect β=-0.056 (p=0.001)
+#   - BBS median=47.14 (IQR 10–56)
+#
+# PMID 34285276 (Hsu et al., 2021, n=40):
+#   - Brunnstrom lower limb=3.9±0.9; III/IV/V=45%/17.5%/37.5%
+#   - Barthel Index=85.3±14.9; TUG=33.2±20.0s
+#   - MAS Knee extensor=0.30±0.56; Knee flexor=0.08±0.27
+#   - Brunnstrom ↔ TUG r=-0.382; MAS Knee Ext ↔ TT-Gait r=-0.437
+#
+# 未获取全文但标识为关键的文献：
+#   - PMID 34776427 (Jeong, 2021, n=218): 大样本相关矩阵待补
+#   - PMID 11944745 (Shelton, 2002, n=171): 纵向预测经典文献待补
+#   - PMID 41400271 (2025, n=41): gait speed 预测因子待补
+#   - PMID 40162876 (2025, n=152): SPPB 心理测量学待补
+# ============================================

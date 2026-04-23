@@ -1,0 +1,3 @@
+OK [0]: CD '/Users/leyixu/Ai cowork/research'.
+FAIL [1]: GET DATA /TYPE=TXT
+   Error: [errLevel 3] Serious error.
