@@ -129,7 +129,7 @@ function responsesToChat(reqBody) {
   const chatBody = {
     model: reqBody.model,
     messages: [],
-    stream: reqBody.stream ?? false,
+    stream: true, // 强制流式：避免非流式等待全量生成，体感延迟大幅降低
   };
 
   // 透传常见参数
