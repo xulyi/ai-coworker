@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -m py_compile scripts/assumption_checks.py)",
+      "Edit(~/.claude/skills/thesis-data-analysis/**)"
+    ],
+    "additionalDirectories": [
+      "/Users/leyixu/.claude/skills/thesis-data-analysis/scripts",
+      "/Users/leyixu/.claude/skills/pua/.codebuddy-plugin"
+    ]
+  }
+}
